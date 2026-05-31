@@ -1,0 +1,345 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>CryptoBet — Admin</title>
+  <link href="https://fonts.googleapis.com/css2?family=Space+Mono:wght@400;700&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet" />
+  <style>
+    :root {
+      --bg:#080b12;--bg2:#0e1420;--bg3:#161d2e;
+      --border:#1e2a3a;--border2:#2a3a50;
+      --text:#e8edf5;--text2:#8899aa;--text3:#4a5a6a;
+      --green:#00e676;--red:#ff3d57;--yellow:#ffd740;--blue:#4fc3f7;
+      --mono:'Space Mono',monospace;--sans:'DM Sans',sans-serif;
+    }
+    *{box-sizing:border-box;margin:0;padding:0;}
+    body{background:var(--bg);color:var(--text);font-family:var(--sans);min-height:100vh;}
+    header{display:flex;align-items:center;justify-content:space-between;padding:0 32px;height:56px;border-bottom:1px solid var(--border);}
+    .logo{font-family:var(--mono);font-size:14px;color:var(--green);}
+    .badge-admin{font-size:11px;background:rgba(255,61,87,0.15);color:var(--red);padding:3px 8px;border-radius:4px;margin-left:10px;font-family:var(--mono);}
+    main{max-width:1100px;margin:0 auto;padding:32px;}
+    .stats-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:16px;margin-bottom:32px;}
+    .stat-card{background:var(--bg2);border:1px solid var(--border2);border-radius:10px;padding:20px;}
+    .stat-label{font-size:11px;color:var(--text3);font-family:var(--mono);margin-bottom:8px;text-transform:uppercase;letter-spacing:0.5px;}
+    .stat-value{font-size:26px;font-weight:600;font-family:var(--mono);}
+    .stat-sub{font-size:12px;color:var(--text2);margin-top:4px;}
+    .section{margin-bottom:36px;}
+    .section-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:14px;}
+    .section-title{font-size:12px;font-family:var(--mono);color:var(--text3);text-transform:uppercase;letter-spacing:0.5px;}
+    .refresh-btn{padding:5px 12px;border-radius:5px;border:1px solid var(--border2);background:transparent;color:var(--text2);font-family:var(--mono);font-size:11px;cursor:pointer;}
+    .refresh-btn:hover{border-color:var(--green);color:var(--green);}
+    table{width:100%;border-collapse:collapse;font-size:13px;}
+    th{text-align:left;padding:9px 14px;font-size:11px;font-family:var(--mono);color:var(--text3);border-bottom:1px solid var(--border);text-transform:uppercase;}
+    td{padding:12px 14px;border-bottom:1px solid var(--border);vertical-align:middle;}
+    tr:hover td{background:var(--bg2);}
+    .mono{font-family:var(--mono);}
+    .pos{color:var(--green);}  .neg{color:var(--red);}
+
+    /* Status badges */
+    .badge{display:inline-block;padding:3px 9px;border-radius:4px;font-size:11px;font-family:var(--mono);}
+    .badge-pending{background:rgba(255,215,64,0.1);color:var(--yellow);}
+    .badge-approved{background:rgba(0,230,118,0.1);color:var(--green);}
+    .badge-rejected{background:rgba(255,61,87,0.1);color:var(--red);}
+    .badge-paid{background:rgba(79,195,247,0.1);color:var(--blue);}
+    .badge-cancelled{background:rgba(74,90,106,0.15);color:var(--text3);}
+
+    /* Action buttons */
+    .action-btns{display:flex;gap:6px;}
+    .btn-approve{padding:5px 12px;border-radius:5px;border:none;background:rgba(0,230,118,0.15);color:var(--green);font-family:var(--mono);font-size:11px;cursor:pointer;transition:background 0.15s;}
+    .btn-approve:hover{background:rgba(0,230,118,0.3);}
+    .btn-reject{padding:5px 12px;border-radius:5px;border:none;background:rgba(255,61,87,0.1);color:var(--red);font-family:var(--mono);font-size:11px;cursor:pointer;}
+    .btn-reject:hover{background:rgba(255,61,87,0.25);}
+    .btn-paid{padding:5px 12px;border-radius:5px;border:none;background:rgba(79,195,247,0.1);color:var(--blue);font-family:var(--mono);font-size:11px;cursor:pointer;}
+    .btn-paid:hover{background:rgba(79,195,247,0.25);}
+
+    /* Notice modal */
+    .modal-overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,0.85);z-index:200;align-items:center;justify-content:center;}
+    .modal-overlay.show{display:flex;}
+    .modal{background:var(--bg2);border:1px solid var(--border2);border-radius:12px;padding:28px;max-width:460px;width:90%;}
+    .modal h3{font-size:16px;margin-bottom:10px;}
+    .modal p{font-size:13px;color:var(--text2);line-height:1.6;margin-bottom:16px;}
+    .modal-actions{display:flex;gap:8px;justify-content:flex-end;}
+    .btn-primary{padding:9px 18px;border-radius:6px;border:none;cursor:pointer;background:var(--green);color:#000;font-weight:700;font-family:var(--mono);font-size:12px;}
+    .btn-secondary{padding:9px 18px;border-radius:6px;border:1px solid var(--border2);cursor:pointer;background:transparent;color:var(--text2);font-family:var(--mono);font-size:12px;}
+    .btn-danger{padding:9px 18px;border-radius:6px;border:none;cursor:pointer;background:var(--red);color:#fff;font-weight:700;font-family:var(--mono);font-size:12px;}
+
+    .detail-box{background:var(--bg3);border-radius:8px;padding:14px;margin-bottom:16px;display:flex;flex-direction:column;gap:8px;}
+    .detail-row{display:flex;justify-content:space-between;font-size:13px;}
+    .detail-row span:first-child{color:var(--text2);}
+    .detail-row span:last-child{font-family:var(--mono);}
+    .note-input{width:100%;background:var(--bg3);border:1px solid var(--border2);border-radius:6px;padding:8px 10px;font-family:var(--mono);font-size:12px;color:var(--text);outline:none;resize:vertical;min-height:60px;}
+
+    .empty-row td{color:var(--text3);font-family:var(--mono);text-align:center;padding:24px;}
+    .toast{position:fixed;bottom:24px;right:24px;background:var(--bg2);border:1px solid var(--border2);border-radius:8px;padding:12px 18px;font-size:13px;font-family:var(--mono);transform:translateY(80px);opacity:0;transition:all 0.3s;pointer-events:none;z-index:300;}
+    .toast.show{transform:translateY(0);opacity:1;}
+  </style>
+</head>
+<body>
+<header>
+  <div>
+    <span class="logo">CRYPTOBET / ADMIN</span>
+    <span class="badge-admin">PRIVATE</span>
+  </div>
+  <div style="display:flex;align-items:center;gap:12px;">
+    <span style="font-family:var(--mono);font-size:11px;color:var(--text3);" id="last-refresh">—</span>
+    <button class="refresh-btn" onclick="loadAll()">↻ Refresh</button>
+    <button class="refresh-btn" onclick="doLogout()" style="color:var(--red);border-color:rgba(255,61,87,0.3);">⏻ Logout</button>
+  </div>
+</header>
+
+<main>
+  <!-- Stats -->
+  <div class="stats-grid">
+    <div class="stat-card">
+      <div class="stat-label">Total Users</div>
+      <div class="stat-value" id="s-users">—</div>
+      <div class="stat-sub">Registered wallets</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-label">Pending Withdrawals</div>
+      <div class="stat-value" style="color:var(--yellow);" id="s-pending">—</div>
+      <div class="stat-sub">Awaiting your review</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-label">Total Paid Out</div>
+      <div class="stat-value neg" id="s-paid">—</div>
+      <div class="stat-sub">Approved + marked paid</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-label">Bonus Issued</div>
+      <div class="stat-value" style="color:var(--blue);" id="s-bonus">—</div>
+      <div class="stat-sub">$100 × new users</div>
+    </div>
+  </div>
+
+  <!-- Withdrawal Requests -->
+  <div class="section">
+    <div class="section-header">
+      <div class="section-title">Withdrawal Requests</div>
+    </div>
+    <table>
+      <thead>
+        <tr>
+          <th>Date</th>
+          <th>Wallet</th>
+          <th>Amount</th>
+          <th>Currency</th>
+          <th>To Address</th>
+          <th>Status</th>
+          <th>Actions</th>
+        </tr>
+      </thead>
+      <tbody id="requests-tbody">
+        <tr class="empty-row"><td colspan="7">No withdrawal requests yet.</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <!-- Users -->
+  <div class="section">
+    <div class="section-header">
+      <div class="section-title">Users</div>
+    </div>
+    <table>
+      <thead>
+        <tr>
+          <th>Wallet</th>
+          <th>Balance</th>
+          <th>Bonus (locked)</th>
+          <th>Withdrawable</th>
+          <th>Requests</th>
+        </tr>
+      </thead>
+      <tbody id="users-tbody">
+        <tr class="empty-row"><td colspan="5">No users found in this browser.</td></tr>
+      </tbody>
+    </table>
+  </div>
+</main>
+
+<!-- Review modal -->
+<div class="modal-overlay" id="review-modal">
+  <div class="modal">
+    <h3 id="review-title">Review Request</h3>
+    <p id="review-subtitle">—</p>
+    <div class="detail-box" id="review-details"></div>
+    <div style="margin-bottom:16px;">
+      <label style="font-size:12px;color:var(--text2);font-family:var(--mono);display:block;margin-bottom:6px;">Internal note (optional)</label>
+      <textarea class="note-input" id="review-note" placeholder="e.g. Sent tx hash, reason for rejection…"></textarea>
+    </div>
+    <div class="modal-actions" id="review-actions"></div>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+let allRequests = []; // cache across all users
+let currentReviewReq = null;
+
+function getAllUsers() {
+  return Object.keys(localStorage)
+    .filter(k => k.startsWith('cb_user_'))
+    .map(k => ({ wallet: k.replace('cb_user_', ''), ...JSON.parse(localStorage[k]) }));
+}
+
+function getAllRequests() {
+  const reqs = [];
+  Object.keys(localStorage).filter(k => k.startsWith('cb_requests_')).forEach(k => {
+    const wallet = k.replace('cb_requests_', '');
+    const list = JSON.parse(localStorage[k] || '[]');
+    list.forEach(r => reqs.push({ ...r, wallet }));
+  });
+  return reqs.sort((a,b) => new Date(b.requestedAt) - new Date(a.requestedAt));
+}
+
+function saveRequest(req) {
+  const key = `cb_requests_${req.wallet}`;
+  const list = JSON.parse(localStorage[key] || '[]');
+  const idx = list.findIndex(r => r.id === req.id);
+  if (idx !== -1) list[idx] = req;
+  localStorage[key] = JSON.stringify(list);
+}
+
+function loadAll() {
+  document.getElementById('last-refresh').textContent = 'Updated ' + new Date().toLocaleTimeString();
+  const users = getAllUsers();
+  allRequests = getAllRequests();
+
+  // Stats
+  const pending = allRequests.filter(r => r.status === 'pending');
+  const paid = allRequests.filter(r => r.status === 'paid');
+  document.getElementById('s-users').textContent = users.length;
+  document.getElementById('s-pending').textContent = pending.length;
+  document.getElementById('s-paid').textContent = '$' + paid.reduce((s,r) => s+r.amount, 0).toFixed(2);
+  document.getElementById('s-bonus').textContent = '$' + (users.length * 100).toLocaleString();
+
+  // Requests table
+  const rtbody = document.getElementById('requests-tbody');
+  if (!allRequests.length) {
+    rtbody.innerHTML = '<tr class="empty-row"><td colspan="7">No withdrawal requests yet.</td></tr>';
+  } else {
+    rtbody.innerHTML = allRequests.map(r => `
+      <tr>
+        <td style="font-size:11px;color:var(--text2);">${new Date(r.requestedAt).toLocaleString()}</td>
+        <td class="mono" style="font-size:11px;">${r.wallet.slice(0,6)}...${r.wallet.slice(-4)}</td>
+        <td class="mono pos">$${r.amount.toFixed(2)}</td>
+        <td class="mono">${(r.currency||'usdc').toUpperCase()}</td>
+        <td class="mono" style="font-size:11px;" title="${r.address}">${r.address.slice(0,10)}...${r.address.slice(-6)}</td>
+        <td><span class="badge badge-${r.status}">${r.status}</span></td>
+        <td><div class="action-btns">${renderActions(r)}</div></td>
+      </tr>`).join('');
+  }
+
+  // Users table
+  const utbody = document.getElementById('users-tbody');
+  if (!users.length) {
+    utbody.innerHTML = '<tr class="empty-row"><td colspan="5">No users found.</td></tr>';
+  } else {
+    utbody.innerHTML = users.map(u => {
+      const withdrawable = Math.max(0, (u.balance||0) - (u.bonus||100));
+      const reqs = allRequests.filter(r => r.wallet === u.wallet);
+      return `<tr>
+        <td class="mono" style="font-size:11px;">${u.wallet.slice(0,8)}...${u.wallet.slice(-6)}</td>
+        <td class="mono pos">$${(u.balance||0).toFixed(2)}</td>
+        <td class="mono" style="color:var(--text3);">$${(u.bonus||100).toFixed(2)}</td>
+        <td class="mono" style="color:${withdrawable>0?'var(--green)':'var(--text3)'};">${withdrawable>0?'$'+withdrawable.toFixed(2):'—'}</td>
+        <td style="font-size:12px;color:var(--text2);">${reqs.length} total · ${reqs.filter(r=>r.status==='pending').length} pending</td>
+      </tr>`;
+    }).join('');
+  }
+}
+
+function renderActions(r) {
+  if (r.status === 'pending') {
+    return `
+      <button class="btn-approve" onclick="openReview('${r.id}','approve')">✓ Approve</button>
+      <button class="btn-reject" onclick="openReview('${r.id}','reject')">✗ Reject</button>`;
+  }
+  if (r.status === 'approved') {
+    return `<button class="btn-paid" onclick="openReview('${r.id}','paid')">Mark as Paid</button>`;
+  }
+  return `<span style="font-size:11px;color:var(--text3);font-family:var(--mono);">${r.note||'—'}</span>`;
+}
+
+function openReview(id, action) {
+  currentReviewReq = allRequests.find(r => r.id === id);
+  if (!currentReviewReq) return;
+  const r = currentReviewReq;
+  const modal = document.getElementById('review-modal');
+  const titles = { approve: 'Approve Withdrawal', reject: 'Reject Withdrawal', paid: 'Mark as Paid' };
+  const subs = {
+    approve: 'Confirm you want to approve this withdrawal. Remember to manually send the funds after approving.',
+    reject: 'The request will be declined and the user will be notified.',
+    paid: 'Confirm you have sent the funds to the user\'s wallet.',
+  };
+  document.getElementById('review-title').textContent = titles[action];
+  document.getElementById('review-subtitle').textContent = subs[action];
+  document.getElementById('review-note').value = '';
+  document.getElementById('review-details').innerHTML = `
+    <div class="detail-row"><span>User wallet</span><span>${r.wallet.slice(0,8)}...${r.wallet.slice(-6)}</span></div>
+    <div class="detail-row"><span>Amount</span><span style="color:var(--green)">$${r.amount.toFixed(2)} ${(r.currency||'usdc').toUpperCase()}</span></div>
+    <div class="detail-row"><span>Send to</span><span>${r.address}</span></div>
+    <div class="detail-row"><span>Requested</span><span>${new Date(r.requestedAt).toLocaleString()}</span></div>`;
+
+  const actions = document.getElementById('review-actions');
+  const confirmLabels = { approve: '✓ Approve', reject: '✗ Reject', paid: '✓ Mark Paid' };
+  const confirmClass = action === 'reject' ? 'btn-danger' : 'btn-primary';
+  actions.innerHTML = `
+    <button class="btn-secondary" onclick="closeReview()">Cancel</button>
+    <button class="${confirmClass}" onclick="confirmReview('${action}')">${confirmLabels[action]}</button>`;
+
+  modal.classList.add('show');
+}
+
+function confirmReview(action) {
+  if (!currentReviewReq) return;
+  const note = document.getElementById('review-note').value.trim();
+  const statusMap = { approve: 'approved', reject: 'rejected', paid: 'paid' };
+  currentReviewReq.status = statusMap[action];
+  currentReviewReq.reviewedAt = new Date().toISOString();
+  currentReviewReq.note = note;
+
+  // If approved and user had balance, freeze the withdrawal amount
+  // (In production: deduct from DB. Here we update localStorage balance)
+  if (action === 'approve') {
+    const uKey = `cb_user_${currentReviewReq.wallet}`;
+    const uData = JSON.parse(localStorage[uKey] || '{}');
+    uData.balance = Math.max(0, (uData.balance || 0) - currentReviewReq.amount);
+    localStorage[uKey] = JSON.stringify(uData);
+  }
+
+  saveRequest(currentReviewReq);
+  closeReview();
+  loadAll();
+  const msgs = { approve: '✅ Request approved. Send the funds manually.', reject: 'Request rejected.', paid: '✅ Marked as paid.' };
+  toast(msgs[action], 3000);
+}
+
+function closeReview() {
+  document.getElementById('review-modal').classList.remove('show');
+  currentReviewReq = null;
+}
+
+function toast(msg, ms=3000) {
+  const el = document.getElementById('toast');
+  el.textContent = msg; el.classList.add('show');
+  setTimeout(() => el.classList.remove('show'), ms);
+}
+
+async function doLogout() {
+  await fetch('/admin/logout', { method: 'POST' });
+  window.location.href = '/admin';
+}
+
+// Auto-refresh + session keepalive check
+loadAll();
+setInterval(loadAll, 15000);
+setInterval(async () => {
+  const r = await fetch('/admin/session');
+  if (!r.ok) window.location.href = '/admin'; // session expired → back to login
+}, 60000);
+</script>
+</body>
+</html>

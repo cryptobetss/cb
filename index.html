@@ -1,0 +1,1213 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>CryptoBet — Higher or Lower</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link href="https://fonts.googleapis.com/css2?family=Space+Mono:wght@400;700&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet" />
+  <style>
+    :root {
+      --bg: #080b12; --bg2: #0e1420; --bg3: #161d2e;
+      --border: #1e2a3a; --border2: #2a3a50;
+      --text: #e8edf5; --text2: #8899aa; --text3: #4a5a6a;
+      --green: #00e676; --green2: #00c853;
+      --red: #ff3d57; --red2: #cc1f36;
+      --yellow: #ffd740; --blue: #4fc3f7; --accent: #00e676;
+      --mono: 'Space Mono', monospace; --sans: 'DM Sans', sans-serif;
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    html, body { height: 100%; background: var(--bg); color: var(--text); font-family: var(--sans); overflow-x: hidden; }
+    ::-webkit-scrollbar { width: 4px; }
+    ::-webkit-scrollbar-track { background: var(--bg); }
+    ::-webkit-scrollbar-thumb { background: var(--border2); border-radius: 2px; }
+
+    #app { display: flex; flex-direction: column; min-height: 100vh; }
+
+    header {
+      display: flex; align-items: center; justify-content: space-between;
+      padding: 0 24px; height: 56px;
+      border-bottom: 1px solid var(--border);
+      background: var(--bg); position: sticky; top: 0; z-index: 100;
+    }
+    .logo { font-family: var(--mono); font-size: 16px; font-weight: 700; color: var(--green); }
+    .logo span { color: var(--text2); font-weight: 400; }
+    .header-right { display: flex; align-items: center; gap: 12px; }
+
+    .wallet-chip {
+      display: flex; align-items: center; gap: 8px; padding: 6px 12px;
+      border-radius: 6px; border: 1px solid var(--border2); background: var(--bg2);
+      font-family: var(--mono); font-size: 12px; cursor: pointer; transition: border-color 0.15s;
+    }
+    .wallet-chip:hover { border-color: var(--green); }
+    .wallet-chip .dot { width: 6px; height: 6px; border-radius: 50%; background: var(--green); }
+    .wallet-chip.disconnected .dot { background: var(--text3); }
+
+    .balance-pill {
+      display: flex; align-items: center; gap: 6px; padding: 6px 12px;
+      border-radius: 6px; background: var(--bg3);
+      font-family: var(--mono); font-size: 12px; color: var(--yellow);
+    }
+
+    /* $BET points pill */
+    .bet-points-pill {
+      display: flex; align-items: center; gap: 7px; padding: 6px 12px;
+      border-radius: 6px; background: var(--bg3);
+      border: 1px solid rgba(179,157,219,0.2);
+      font-family: var(--mono); font-size: 12px; color: #b39ddb;
+      cursor: pointer; transition: border-color 0.15s;
+    }
+    .bet-points-pill:hover { border-color: #b39ddb; }
+    .bet-icon {
+      width: 16px; height: 16px; border-radius: 50%;
+      background: linear-gradient(135deg, #b39ddb, #7c4dff);
+      display: flex; align-items: center; justify-content: center;
+      font-size: 9px; font-weight: 700; color: #fff; flex-shrink: 0;
+    }
+    .airdrop-badge {
+      font-size: 9px; background: rgba(179,157,219,0.12);
+      border: 1px solid rgba(179,157,219,0.25); border-radius: 3px;
+      padding: 1px 5px; color: #b39ddb; letter-spacing: 0.3px;
+    }
+    /* Points modal extras */
+    .points-breakdown { display: flex; flex-direction: column; gap: 10px; margin-bottom: 20px; }
+    .points-row { display: flex; justify-content: space-between; align-items: center; font-size: 13px; }
+    .points-row span:first-child { color: var(--text2); }
+    .points-row span:last-child { font-family: var(--mono); font-weight: 600; }
+    .points-bar-wrap { background: var(--bg3); border-radius: 6px; overflow: hidden; height: 5px; margin: 6px 0 2px; }
+    .points-bar { height: 100%; background: linear-gradient(90deg, #7c4dff, #b39ddb); border-radius: 6px; transition: width 0.5s ease; }
+    .supply-note { font-size: 11px; color: var(--text3); font-family: var(--mono); text-align: center; margin-top: 4px; line-height: 1.6; }
+
+    /* Withdraw button in header */
+    .withdraw-btn-header {
+      display: none; align-items: center; gap: 6px; padding: 6px 14px;
+      border-radius: 6px; border: 1px solid var(--border2); background: var(--bg2);
+      font-family: var(--mono); font-size: 12px; color: var(--text2);
+      cursor: pointer; transition: all 0.15s;
+    }
+    .withdraw-btn-header:hover { border-color: var(--yellow); color: var(--yellow); }
+    .withdraw-btn-header.visible { display: flex; }
+
+    main { display: grid; grid-template-columns: 300px 1fr; flex: 1; height: calc(100vh - 56px); overflow: hidden; }
+
+    aside { border-right: 1px solid var(--border); display: flex; flex-direction: column; overflow: hidden; background: var(--bg); }
+    .sidebar-header { padding: 12px 16px; border-bottom: 1px solid var(--border); }
+    .search-input {
+      width: 100%; background: var(--bg2); border: 1px solid var(--border2);
+      border-radius: 6px; padding: 7px 10px 7px 32px;
+      font-family: var(--sans); font-size: 13px; color: var(--text); outline: none; transition: border-color 0.15s;
+    }
+    .search-input::placeholder { color: var(--text3); }
+    .search-input:focus { border-color: var(--accent); }
+    .search-wrap { position: relative; }
+    .search-icon { position: absolute; left: 10px; top: 50%; transform: translateY(-50%); color: var(--text3); font-size: 13px; pointer-events: none; }
+
+    .coin-list { overflow-y: auto; flex: 1; }
+    .coin-item {
+      display: flex; align-items: center; gap: 10px; padding: 10px 14px;
+      cursor: pointer; border-bottom: 1px solid var(--border); transition: background 0.1s;
+    }
+    .coin-item:hover, .coin-item.active { background: var(--bg2); }
+    .coin-item.active { border-left: 2px solid var(--green); }
+    .coin-img { width: 28px; height: 28px; border-radius: 50%; background: var(--bg3); flex-shrink: 0; }
+    .coin-info { flex: 1; min-width: 0; }
+    .coin-name { font-size: 13px; font-weight: 500; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .coin-symbol { font-family: var(--mono); font-size: 11px; color: var(--text3); }
+    .coin-price-col { text-align: right; }
+    .coin-price { font-family: var(--mono); font-size: 12px; }
+    .coin-change { font-family: var(--mono); font-size: 11px; }
+    .pos { color: var(--green); } .neg { color: var(--red); }
+
+    .content { display: flex; flex-direction: column; overflow: hidden; min-height: 0; }
+
+    /* Coin header — more compact */
+    .coin-header {
+      padding: 10px 20px; border-bottom: 1px solid var(--border);
+      display: flex; align-items: center; gap: 16px; background: var(--bg);
+      flex-shrink: 0;
+    }
+    .coin-header-img { width: 32px; height: 32px; border-radius: 50%; }
+    .coin-header-info h2 { font-size: 16px; font-weight: 600; }
+    .coin-header-info .ticker { font-family: var(--mono); font-size: 11px; color: var(--text3); }
+    .price-big { font-family: var(--mono); font-size: 22px; font-weight: 700; }
+    .price-change-big { font-family: var(--mono); font-size: 12px; }
+
+    /* Bet panel — now on top, compact single row */
+    .bet-panel {
+      background: var(--bg2); padding: 12px 20px;
+      border-bottom: 1px solid var(--border); flex-shrink: 0;
+      border-top: none;
+    }
+    .bet-panel-top {
+      display: flex; align-items: center; gap: 10px; flex-wrap: nowrap;
+    }
+    .bet-label { font-size: 11px; color: var(--text3); font-family: var(--mono); text-transform: uppercase; letter-spacing: 0.5px; white-space: nowrap; }
+    .amount-input {
+      background: var(--bg3); border: 1px solid var(--border2); border-radius: 6px;
+      padding: 7px 10px; font-family: var(--mono); font-size: 13px; color: var(--text);
+      width: 100px; outline: none; transition: border-color 0.15s;
+    }
+    .amount-input:focus { border-color: var(--accent); }
+    .preset-btns { display: flex; gap: 3px; }
+    .preset-btn {
+      padding: 5px 8px; border-radius: 4px; border: 1px solid var(--border2);
+      background: var(--bg3); font-family: var(--mono); font-size: 10px; color: var(--text2);
+      cursor: pointer; transition: all 0.15s; white-space: nowrap;
+    }
+    .preset-btn:hover { border-color: var(--accent); color: var(--green); }
+    .bet-buttons { display: flex; gap: 8px; margin-left: auto; flex-shrink: 0; }
+    .btn-higher {
+      display: flex; align-items: center; gap: 6px; padding: 8px 20px;
+      border-radius: 7px; border: none; cursor: pointer;
+      background: var(--green); color: #000; font-weight: 700; font-size: 14px;
+      font-family: var(--mono); transition: all 0.15s; white-space: nowrap;
+    }
+    .btn-higher:hover { background: var(--green2); transform: translateY(-1px); }
+    .btn-lower {
+      display: flex; align-items: center; gap: 6px; padding: 8px 20px;
+      border-radius: 7px; border: none; cursor: pointer;
+      background: var(--red); color: #fff; font-weight: 700; font-size: 14px;
+      font-family: var(--mono); transition: all 0.15s; white-space: nowrap;
+    }
+    .btn-lower:hover { background: var(--red2); transform: translateY(-1px); }
+    .btn-higher:disabled, .btn-lower:disabled { opacity: 0.4; cursor: not-allowed; transform: none; }
+
+    /* Active bet strip */
+    .active-bet {
+      display: none; align-items: center; gap: 12px;
+      padding: 8px 20px; background: rgba(255,215,64,0.04);
+      border-top: 1px solid rgba(255,215,64,0.12); flex-shrink: 0;
+    }
+    .active-bet.show { display: flex; }
+    .bet-info { flex: 1; }
+    .bet-info strong { font-family: var(--mono); font-size: 12px; }
+    .bet-info small { display: block; font-size: 11px; color: var(--text2); margin-top: 1px; }
+    .timer-ring { position: relative; width: 40px; height: 40px; flex-shrink: 0; }
+    .timer-ring svg { transform: rotate(-90deg); }
+    .timer-ring circle { fill: none; stroke-width: 3; }
+    .timer-bg { stroke: var(--border2); }
+    .timer-fg { stroke: var(--yellow); stroke-linecap: round; transition: stroke-dashoffset 1s linear; }
+    .timer-text {
+      position: absolute; inset: 0; display: flex; align-items: center; justify-content: center;
+      font-family: var(--mono); font-size: 10px; font-weight: 700; color: var(--yellow);
+    }
+
+    /* Chart — fixed small height */
+    .chart-container { height: 220px; position: relative; min-height: 0; overflow: hidden; flex-shrink: 0; }
+    #tv-widget { width: 100%; height: 100%; }
+
+    /* ===== MODALS ===== */
+    .modal-overlay {
+      display: none; position: fixed; inset: 0;
+      background: rgba(0,0,0,0.85); z-index: 200;
+      align-items: center; justify-content: center;
+    }
+    .modal-overlay.show { display: flex; }
+    .modal {
+      background: var(--bg2); border: 1px solid var(--border2);
+      border-radius: 12px; padding: 32px; max-width: 480px; width: 90%;
+    }
+    .modal h2 { font-size: 18px; margin-bottom: 8px; }
+    .modal p { font-size: 14px; color: var(--text2); line-height: 1.6; margin-bottom: 20px; }
+    .modal-actions { display: flex; gap: 10px; justify-content: flex-end; margin-top: 20px; }
+    .btn-primary {
+      padding: 10px 20px; border-radius: 6px; border: none; cursor: pointer;
+      background: var(--green); color: #000; font-weight: 700; font-family: var(--mono); font-size: 13px;
+    }
+    .btn-primary:hover { background: var(--green2); }
+    .btn-secondary {
+      padding: 10px 20px; border-radius: 6px; border: 1px solid var(--border2); cursor: pointer;
+      background: transparent; color: var(--text2); font-family: var(--mono); font-size: 13px;
+    }
+    .btn-secondary:hover { border-color: var(--text); color: var(--text); }
+
+    /* Deposit modal */
+    .deposit-tabs { display: flex; gap: 4px; margin-bottom: 20px; }
+    .tab-btn {
+      flex: 1; padding: 8px; border-radius: 6px; border: 1px solid var(--border2);
+      background: transparent; color: var(--text2); font-family: var(--mono); font-size: 12px; cursor: pointer;
+    }
+    .tab-btn.active { border-color: var(--accent); color: var(--green); background: rgba(0,230,118,0.05); }
+    .qr-area {
+      background: var(--bg3); border-radius: 8px; padding: 20px;
+      text-align: center; margin-bottom: 16px;
+    }
+    .wallet-address { font-family: var(--mono); font-size: 11px; color: var(--text2); word-break: break-all; line-height: 1.6; margin-top: 10px; }
+    .copy-btn {
+      margin-top: 8px; padding: 6px 14px; border-radius: 4px;
+      border: 1px solid var(--border2); background: var(--bg2);
+      color: var(--text2); font-size: 12px; cursor: pointer;
+    }
+    .copy-btn:hover { border-color: var(--accent); color: var(--green); }
+
+    /* Withdraw modal */
+    .withdraw-form { display: flex; flex-direction: column; gap: 14px; }
+    .form-group { display: flex; flex-direction: column; gap: 6px; }
+    .form-label { font-size: 12px; color: var(--text2); font-family: var(--mono); }
+    .form-input {
+      background: var(--bg3); border: 1px solid var(--border2); border-radius: 6px;
+      padding: 10px 12px; font-family: var(--mono); font-size: 13px; color: var(--text);
+      outline: none; transition: border-color 0.15s; width: 100%;
+    }
+    .form-input:focus { border-color: var(--accent); }
+    .form-input::placeholder { color: var(--text3); }
+
+    .withdraw-info-box {
+      background: var(--bg3); border-radius: 8px; padding: 14px 16px;
+      display: flex; flex-direction: column; gap: 8px;
+    }
+    .withdraw-info-row { display: flex; justify-content: space-between; font-size: 13px; }
+    .withdraw-info-row span:first-child { color: var(--text2); }
+    .withdraw-info-row span:last-child { font-family: var(--mono); font-weight: 600; }
+
+    .warning-box {
+      background: rgba(255,215,64,0.05); border: 1px solid rgba(255,215,64,0.2);
+      border-radius: 8px; padding: 12px 14px;
+      font-size: 12px; color: var(--yellow); line-height: 1.6; font-family: var(--mono);
+    }
+
+    /* Pending request banner */
+    .pending-banner {
+      display: none; align-items: center; gap: 10px;
+      padding: 10px 16px; background: rgba(255,215,64,0.05);
+      border-bottom: 1px solid rgba(255,215,64,0.15);
+      font-size: 12px; font-family: var(--mono);
+    }
+    .pending-banner.show { display: flex; }
+    .pending-banner .dot-yellow { width: 6px; height: 6px; border-radius: 50%; background: var(--yellow); flex-shrink: 0; animation: pulse 1.5s infinite; }
+    @keyframes pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.3; } }
+    .pending-banner span { color: var(--yellow); flex: 1; }
+    .pending-cancel-btn {
+      padding: 4px 10px; border-radius: 4px; border: 1px solid rgba(255,61,87,0.3);
+      background: transparent; color: var(--red); font-family: var(--mono); font-size: 11px;
+      cursor: pointer;
+    }
+    .pending-cancel-btn:hover { background: rgba(255,61,87,0.1); }
+
+    /* Result modal */
+    .result-icon { font-size: 48px; text-align: center; margin-bottom: 16px; }
+    .result-win { color: var(--green); }
+    .result-lose { color: var(--red); }
+
+    /* Toast */
+    #toast {
+      position: fixed; bottom: 24px; right: 24px; z-index: 300;
+      background: var(--bg2); border: 1px solid var(--border2);
+      border-radius: 8px; padding: 12px 18px;
+      font-size: 13px; font-family: var(--mono);
+      transform: translateY(80px); opacity: 0; transition: all 0.3s; pointer-events: none;
+    }
+    #toast.show { transform: translateY(0); opacity: 1; }
+
+    .loading-coins { padding: 20px; text-align: center; font-size: 13px; color: var(--text3); font-family: var(--mono); }
+
+    /* ===== NAV TABS ===== */
+    .nav-tabs {
+      display: flex; gap: 2px; padding: 0 20px;
+      border-bottom: 1px solid var(--border);
+      background: var(--bg); flex-shrink: 0;
+    }
+    .nav-tab {
+      padding: 9px 16px; font-family: var(--mono); font-size: 12px;
+      color: var(--text3); cursor: pointer; border: none; background: none;
+      border-bottom: 2px solid transparent; margin-bottom: -1px;
+      transition: color 0.15s; white-space: nowrap;
+    }
+    .nav-tab:hover { color: var(--text2); }
+    .nav-tab.active { color: var(--green); border-bottom-color: var(--green); }
+
+    /* ===== HISTORY PAGE ===== */
+    .page { display: none; flex: 1; overflow-y: auto; flex-direction: column; }
+    .page.active { display: flex; }
+    .history-wrap { padding: 20px; flex: 1; }
+    .history-section-title {
+      font-size: 11px; font-family: var(--mono); color: var(--text3);
+      text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 12px;
+    }
+    .bet-card {
+      background: var(--bg2); border: 1px solid var(--border2); border-radius: 8px;
+      padding: 14px 16px; margin-bottom: 10px; display: flex; align-items: center; gap: 14px;
+    }
+    .bet-card.won { border-left: 3px solid var(--green); }
+    .bet-card.lost { border-left: 3px solid var(--red); }
+    .bet-card.pending-bet { border-left: 3px solid var(--yellow); }
+    .bet-card-dir {
+      font-family: var(--mono); font-size: 13px; font-weight: 700;
+      min-width: 80px;
+    }
+    .bet-card-dir.up { color: var(--green); }
+    .bet-card-dir.down { color: var(--red); }
+    .bet-card-info { flex: 1; }
+    .bet-card-info strong { font-size: 13px; display: block; }
+    .bet-card-info small { font-size: 11px; color: var(--text2); font-family: var(--mono); }
+    .bet-card-result { text-align: right; }
+    .bet-card-result .pnl { font-family: var(--mono); font-size: 14px; font-weight: 700; }
+    .bet-card-result .pnl.pos { color: var(--green); }
+    .bet-card-result .pnl.neg { color: var(--red); }
+    .bet-card-result small { font-size: 11px; color: var(--text3); display: block; font-family: var(--mono); }
+    .history-empty {
+      text-align: center; padding: 48px 20px;
+      color: var(--text3); font-family: var(--mono); font-size: 13px;
+    }
+    .history-empty span { font-size: 32px; display: block; margin-bottom: 12px; opacity: 0.4; }
+    .history-stats {
+      display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; margin-bottom: 20px;
+    }
+    .hstat {
+      background: var(--bg2); border: 1px solid var(--border2); border-radius: 8px;
+      padding: 12px 14px;
+    }
+    .hstat-label { font-size: 10px; color: var(--text3); font-family: var(--mono); text-transform: uppercase; margin-bottom: 4px; }
+    .hstat-val { font-size: 18px; font-family: var(--mono); font-weight: 600; }
+
+    @media (max-width: 800px) {
+      main { grid-template-columns: 1fr; }
+      aside { display: none; }
+      .history-stats { grid-template-columns: repeat(2,1fr); }
+    }
+  </style>
+</head>
+<body>
+<div id="app">
+  <header>
+    <div class="logo">CRYPTO<span>BET</span></div>
+    <div class="header-right">
+      <div class="balance-pill">
+        <span>💰</span>
+        <span id="balance-display">$0.00</span>
+      </div>
+      <!-- $BET Points pill -->
+      <div class="bet-points-pill" onclick="openPointsModal()" title="Your $BET airdrop points">
+        <div class="bet-icon">B</div>
+        <span id="bet-points-display">0.00</span>
+        <span style="color: var(--text3);">$BET</span>
+        <span class="airdrop-badge">AIRDROP</span>
+      </div>
+      <button class="withdraw-btn-header" id="withdraw-header-btn" onclick="openWithdrawModal()">
+        ↑ Withdraw
+      </button>
+      <div class="wallet-chip disconnected" id="wallet-chip" onclick="handleWalletChipClick()">
+        <div class="dot"></div>
+        <span id="wallet-label">Connect Wallet</span>
+      </div>
+    </div>
+  </header>
+
+  <!-- Pending withdrawal banner (shown below header) -->
+  <div class="pending-banner" id="pending-banner">
+    <div class="dot-yellow"></div>
+    <span id="pending-banner-text">Withdrawal request pending review…</span>
+    <button class="pending-cancel-btn" onclick="cancelWithdrawal()">Cancel</button>
+  </div>
+
+  <main>
+    <aside>
+      <div class="sidebar-header">
+        <div class="search-wrap">
+          <span class="search-icon">🔍</span>
+          <input type="text" class="search-input" id="coin-search" placeholder="Search coins..." oninput="filterCoins(this.value)" />
+        </div>
+      </div>
+      <div class="coin-list" id="coin-list">
+        <div class="loading-coins">Loading markets...</div>
+      </div>
+    </aside>
+
+    <div class="content">
+      <!-- Nav tabs -->
+      <div class="nav-tabs">
+        <button class="nav-tab active" id="tab-trade" onclick="switchTab('trade')">📈 Trade</button>
+        <button class="nav-tab" id="tab-history" onclick="switchTab('history')">📋 My Bets</button>
+      </div>
+
+      <!-- PAGE: TRADE -->
+      <div class="page active" id="page-trade" style="flex-direction:column;">
+
+      <!-- Coin header — compact -->
+      <div class="coin-header" id="coin-header">
+        <img class="coin-header-img" id="coin-img" src="" alt="" />
+        <div class="coin-header-info">
+          <h2 id="coin-name-display">Select a coin</h2>
+          <div class="ticker" id="coin-ticker"></div>
+        </div>
+        <div style="margin-left:auto;">
+          <div class="price-big" id="price-big">—</div>
+          <div class="price-change-big" id="price-change-big"></div>
+        </div>
+      </div>
+
+      <!-- Bet panel — TOP, single compact row -->
+      <div class="bet-panel">
+        <div class="bet-panel-top">
+          <span class="bet-label">2 min bet</span>
+          <input type="number" class="amount-input" id="bet-amount" value="10" min="1" placeholder="$" />
+          <div class="preset-btns">
+            <button class="preset-btn" onclick="setAmount(5)">$5</button>
+            <button class="preset-btn" onclick="setAmount(10)">$10</button>
+            <button class="preset-btn" onclick="setAmount(25)">$25</button>
+            <button class="preset-btn" onclick="setAmount(50)">$50</button>
+            <button class="preset-btn" onclick="setAmount(100)">$100</button>
+            <button class="preset-btn" onclick="setAmountMax()">MAX</button>
+          </div>
+          <div class="bet-buttons">
+            <button class="btn-higher" id="btn-higher" onclick="placeBet('higher')" disabled>▲ HIGHER</button>
+            <button class="btn-lower" id="btn-lower" onclick="placeBet('lower')" disabled>▼ LOWER</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Active bet strip (shown when bet is live) -->
+      <div class="active-bet" id="active-bet">
+        <div class="bet-info">
+          <strong id="active-bet-label">—</strong>
+          <small id="active-bet-detail">—</small>
+        </div>
+        <div class="timer-ring">
+          <svg width="40" height="40" viewBox="0 0 48 48">
+            <circle class="timer-bg" cx="24" cy="24" r="20" />
+            <circle class="timer-fg" id="timer-circle" cx="24" cy="24" r="20" stroke-dasharray="125.6" stroke-dashoffset="0" />
+          </svg>
+          <div class="timer-text" id="timer-text">2:00</div>
+        </div>
+      </div>
+
+      <!-- TradingView chart — fills remaining space -->
+      <div class="chart-container">
+        <div id="tv-widget"></div>
+        <div class="chart-placeholder" id="chart-placeholder">
+          <svg width="64" height="40" viewBox="0 0 64 40" fill="none">
+            <polyline points="0,35 12,20 24,28 36,10 48,18 64,5" stroke="#4a5a6a" stroke-width="2" fill="none"/>
+          </svg>
+          <span>Select a coin to view chart</span>
+        </div>
+      </div>
+
+      </div><!-- end page-trade -->
+
+      <!-- PAGE: HISTORY -->
+      <div class="page" id="page-history">
+        <div class="history-wrap">
+          <div class="history-stats">
+            <div class="hstat">
+              <div class="hstat-label">Total bets</div>
+              <div class="hstat-val" id="hs-total">0</div>
+            </div>
+            <div class="hstat">
+              <div class="hstat-label">Wins</div>
+              <div class="hstat-val pos" id="hs-wins">0</div>
+            </div>
+            <div class="hstat">
+              <div class="hstat-label">Losses</div>
+              <div class="hstat-val neg" id="hs-losses">0</div>
+            </div>
+            <div class="hstat">
+              <div class="hstat-label">Win rate</div>
+              <div class="hstat-val" id="hs-rate" style="color:var(--yellow);">—</div>
+            </div>
+          </div>
+
+          <!-- Active bet if any -->
+          <div id="history-active-section">
+            <div class="history-section-title">🟡 Active bet</div>
+            <div id="history-active-card"></div>
+          </div>
+
+          <div class="history-section-title" style="margin-top:20px;">📋 Past bets</div>
+          <div id="history-list"></div>
+        </div>
+      </div>
+    </div>
+  </main>
+</div>
+
+<!-- Wallet Connect Modal -->
+<div class="modal-overlay" id="wallet-modal">
+  <div class="modal">
+    <h2>Connect Wallet</h2>
+    <p>Connect your Solana wallet to deposit USDC or SOL and start trading. New users receive $100 in bonus credits automatically.</p>
+    <div class="modal-actions">
+      <button class="btn-secondary" onclick="closeModal('wallet-modal')">Cancel</button>
+      <button class="btn-primary" onclick="connectPhantom()">Connect Phantom</button>
+    </div>
+  </div>
+</div>
+
+<!-- Deposit Modal -->
+<div class="modal-overlay" id="deposit-modal">
+  <div class="modal">
+    <h2>Deposit Funds</h2>
+    <p>Send USDC or SOL on the Solana network to the address below. Your deposit will be credited to your account.</p>
+    <div class="deposit-tabs">
+      <button class="tab-btn active" onclick="switchDepositTab('usdc')">USDC</button>
+      <button class="tab-btn" onclick="switchDepositTab('sol')">SOL</button>
+    </div>
+    <div class="qr-area">
+      <div class="wallet-address" id="deposit-address">—</div>
+      <button class="copy-btn" onclick="copyDepositAddress()">Copy address</button>
+    </div>
+    <div style="font-size: 12px; color: var(--text3); font-family: var(--mono); line-height: 1.6;">
+      ⚠ Funds are held in our custody wallet. Withdrawals require manual approval.
+    </div>
+    <div class="modal-actions">
+      <button class="btn-secondary" onclick="closeModal('deposit-modal')">Close</button>
+    </div>
+  </div>
+</div>
+
+<!-- Withdraw Modal -->
+<div class="modal-overlay" id="withdraw-modal">
+  <div class="modal">
+    <h2>Request Withdrawal</h2>
+    <p>Your request will be reviewed and sent manually. Withdrawals are processed within 24–48h.</p>
+
+    <div class="withdraw-info-box" style="margin-bottom: 16px;">
+      <div class="withdraw-info-row">
+        <span>Total balance</span>
+        <span id="wd-total-balance">$0.00</span>
+      </div>
+      <div class="withdraw-info-row">
+        <span>Bonus (non-withdrawable)</span>
+        <span style="color: var(--text3);" id="wd-bonus-locked">-$100.00</span>
+      </div>
+      <div class="withdraw-info-row" style="border-top: 1px solid var(--border2); padding-top: 8px; margin-top: 4px;">
+        <span>Available to withdraw</span>
+        <span style="color: var(--green);" id="wd-available">$0.00</span>
+      </div>
+    </div>
+
+    <div class="withdraw-form" id="withdraw-form-fields">
+      <div class="form-group">
+        <label class="form-label">Amount (USD)</label>
+        <input type="number" class="form-input" id="wd-amount" placeholder="Enter amount..." min="1" />
+      </div>
+      <div class="form-group">
+        <label class="form-label">Currency</label>
+        <select class="form-input" id="wd-currency">
+          <option value="usdc">USDC (Solana)</option>
+          <option value="sol">SOL (Solana)</option>
+        </select>
+      </div>
+      <div class="form-group">
+        <label class="form-label">Your Solana wallet address</label>
+        <input type="text" class="form-input" id="wd-address" placeholder="Your SOL address to receive funds..." />
+      </div>
+      <div class="warning-box">
+        ⚠ Double-check your address. Funds sent to a wrong address cannot be recovered. Withdrawals are reviewed manually before processing.
+      </div>
+    </div>
+
+    <div class="modal-actions">
+      <button class="btn-secondary" onclick="closeModal('withdraw-modal')">Cancel</button>
+      <button class="btn-primary" onclick="submitWithdrawal()" id="wd-submit-btn">Submit Request</button>
+    </div>
+  </div>
+</div>
+
+<!-- Bet Result Modal -->
+<div class="modal-overlay" id="result-modal">
+  <div class="modal" style="text-align: center;">
+    <div class="result-icon" id="result-icon">🎯</div>
+    <h2 id="result-title">—</h2>
+    <p id="result-detail">—</p>
+    <div class="modal-actions" style="justify-content: center;">
+      <button class="btn-primary" onclick="closeModal('result-modal')">Play Again</button>
+    </div>
+  </div>
+</div>
+
+<!-- $BET Points Modal -->
+<div class="modal-overlay" id="points-modal">
+  <div class="modal">
+    <h2 style="display:flex;align-items:center;gap:10px;">
+      <span style="width:28px;height:28px;border-radius:50%;background:linear-gradient(135deg,#b39ddb,#7c4dff);display:inline-flex;align-items:center;justify-content:center;font-size:13px;font-weight:700;color:#fff;">B</span>
+      Your $BET Points
+    </h2>
+    <p>Every dollar wagered earns <strong style="color:#b39ddb;">0.01 $BET</strong> regardless of win or loss. Points will be converted to real tokens at the airdrop.</p>
+
+    <div class="points-breakdown">
+      <div class="points-row">
+        <span>Total $BET earned</span>
+        <span style="color:#b39ddb;font-size:18px;" id="pm-total">0.00 $BET</span>
+      </div>
+      <div class="points-row">
+        <span>Total wagered</span>
+        <span id="pm-wagered">$0.00</span>
+      </div>
+      <div class="points-row">
+        <span>Bets placed</span>
+        <span id="pm-bets">0</span>
+      </div>
+      <div class="points-row" style="margin-top:6px;">
+        <span>Your share of supply</span>
+        <span id="pm-share" style="color:#b39ddb;">0.000000%</span>
+      </div>
+      <div class="points-bar-wrap">
+        <div class="points-bar" id="pm-bar" style="width:0%"></div>
+      </div>
+    </div>
+
+    <div style="background:var(--bg3);border-radius:8px;padding:14px 16px;margin-bottom:16px;">
+      <div style="font-size:11px;color:var(--text3);font-family:var(--mono);margin-bottom:10px;text-transform:uppercase;letter-spacing:0.5px;">Earning rate</div>
+      <div style="display:flex;justify-content:space-between;font-size:13px;margin-bottom:6px;">
+        <span style="color:var(--text2);">Per $1 wagered</span>
+        <span style="font-family:var(--mono);color:#b39ddb;">0.01 $BET</span>
+      </div>
+      <div style="display:flex;justify-content:space-between;font-size:13px;margin-bottom:6px;">
+        <span style="color:var(--text2);">Per $100 wagered</span>
+        <span style="font-family:var(--mono);color:#b39ddb;">1.00 $BET</span>
+      </div>
+      <div style="display:flex;justify-content:space-between;font-size:13px;">
+        <span style="color:var(--text2);">Per $1,000 wagered</span>
+        <span style="font-family:var(--mono);color:#b39ddb;">10.00 $BET</span>
+      </div>
+    </div>
+
+    <div class="supply-note">
+      Total supply: 500,000,000 $BET · Airdrop allocation TBD<br/>
+      Points snapshot taken at airdrop date — keep betting to earn more!
+    </div>
+
+    <div class="modal-actions">
+      <button class="btn-primary" onclick="closeModal('points-modal')" style="background:#7c4dff;color:#fff;">Got it</button>
+    </div>
+  </div>
+</div>
+
+<div id="toast"></div>
+
+<script src="https://s3.tradingview.com/tv.js"></script>
+<script>
+/* ===== CONFIG ===== */
+const CUSTODY = {
+  usdc: 'YOUR_SOLANA_WALLET_ADDRESS_FOR_USDC',
+  sol:  'YOUR_SOLANA_WALLET_ADDRESS_FOR_SOL',
+};
+const BONUS_AMOUNT   = 100;
+const BET_RATE       = 0.01;   // $BET per $1 wagered
+const BET_SUPPLY     = 500_000_000;
+const CG_BASE        = 'https://api.coingecko.com/api/v3';
+
+/* ===== STATE ===== */
+const STATE = {
+  wallet: null, balance: 0, bonus: BONUS_AMOUNT,
+  betPoints: 0,       // $BET points accumulated
+  totalWagered: 0,    // lifetime $ wagered
+  betsPlaced: 0,      // lifetime bet count
+  coins: [], filteredCoins: [], selectedCoin: null,
+  activeBet: null, betTimer: null, tvWidget: null,
+};
+
+/* ===== STORAGE HELPERS ===== */
+function getUserKey() { return `cb_user_${STATE.wallet}`; }
+function getRequestsKey() { return `cb_requests_${STATE.wallet}`; }
+
+function loadUser() {
+  const d = JSON.parse(localStorage.getItem(getUserKey()) || 'null');
+  return d;
+}
+function saveUser() {
+  const existing = loadUser() || {};
+  localStorage.setItem(getUserKey(), JSON.stringify({
+    ...existing,
+    balance:      STATE.balance,
+    bonus:        STATE.bonus,
+    betPoints:    STATE.betPoints,
+    totalWagered: STATE.totalWagered,
+    betsPlaced:   STATE.betsPlaced,
+  }));
+}
+
+function loadRequests() {
+  return JSON.parse(localStorage.getItem(getRequestsKey()) || '[]');
+}
+function saveRequests(reqs) {
+  localStorage.setItem(getRequestsKey(), JSON.stringify(reqs));
+}
+
+/* ===== BET HISTORY ===== */
+function getBetHistoryKey() { return `cb_bets_${STATE.wallet}`; }
+function loadBetHistory() {
+  return JSON.parse(localStorage.getItem(getBetHistoryKey()) || '[]');
+}
+function saveBetToHistory(record) {
+  const history = loadBetHistory();
+  history.unshift(record); // newest first
+  // Keep last 200 bets max
+  localStorage.setItem(getBetHistoryKey(), JSON.stringify(history.slice(0, 200)));
+}
+
+/* ===== NAV TABS ===== */
+function switchTab(tab) {
+  document.getElementById('page-trade').classList.toggle('active', tab === 'trade');
+  document.getElementById('page-history').classList.toggle('active', tab === 'history');
+  document.getElementById('tab-trade').classList.toggle('active', tab === 'trade');
+  document.getElementById('tab-history').classList.toggle('active', tab === 'history');
+  if (tab === 'history') renderHistory();
+}
+
+function renderHistory() {
+  if (!STATE.wallet) {
+    document.getElementById('history-list').innerHTML = '<div class="history-empty"><span>🔒</span>Connect your wallet to see your bet history.</div>';
+    document.getElementById('history-active-section').style.display = 'none';
+    return;
+  }
+
+  const history = loadBetHistory();
+  const wins    = history.filter(b => b.result === 'won').length;
+  const losses  = history.filter(b => b.result === 'lost').length;
+  const rate    = history.length > 0 ? ((wins / history.length) * 100).toFixed(0) + '%' : '—';
+
+  document.getElementById('hs-total').textContent   = history.length;
+  document.getElementById('hs-wins').textContent    = wins;
+  document.getElementById('hs-losses').textContent  = losses;
+  document.getElementById('hs-rate').textContent    = rate;
+
+  // Active bet
+  const activeSection = document.getElementById('history-active-section');
+  const activeCard    = document.getElementById('history-active-card');
+  if (STATE.activeBet) {
+    activeSection.style.display = 'block';
+    const b = STATE.activeBet;
+    const isUp = b.direction === 'higher';
+    activeCard.innerHTML = `
+      <div class="bet-card pending-bet">
+        <div class="bet-card-dir ${isUp?'up':'down'}">${isUp?'▲ HIGHER':'▼ LOWER'}</div>
+        <div class="bet-card-info">
+          <strong>${b.coin.symbol.toUpperCase()} / USD</strong>
+          <small>Entry: $${formatPrice(b.priceAt)} · Bet: $${b.amount.toFixed(2)}</small>
+        </div>
+        <div class="bet-card-result">
+          <div class="pnl" style="color:var(--yellow);">⏳ LIVE</div>
+          <small id="history-timer-live">—</small>
+        </div>
+      </div>`;
+  } else {
+    activeSection.style.display = 'none';
+  }
+
+  // Past bets
+  const listEl = document.getElementById('history-list');
+  if (!history.length) {
+    listEl.innerHTML = '<div class="history-empty"><span>🎲</span>No bets yet — place your first bet!</div>';
+    return;
+  }
+  listEl.innerHTML = history.map(b => {
+    const isUp  = b.direction === 'higher';
+    const won   = b.result === 'won';
+    const pnl   = won ? `+$${b.amount.toFixed(2)}` : `-$${b.amount.toFixed(2)}`;
+    const date  = new Date(b.timestamp).toLocaleString();
+    const move  = b.exitPrice ? ((b.exitPrice - b.entryPrice) / b.entryPrice * 100).toFixed(3) : '—';
+    return `
+      <div class="bet-card ${won?'won':'lost'}">
+        <div class="bet-card-dir ${isUp?'up':'down'}">${isUp?'▲ HIGHER':'▼ LOWER'}</div>
+        <div class="bet-card-info">
+          <strong>${b.coin} / USD</strong>
+          <small>Entry: $${formatPrice(b.entryPrice)} → Exit: $${formatPrice(b.exitPrice)} (${move>0?'+':''}${move}%) · ${date}</small>
+        </div>
+        <div class="bet-card-result">
+          <div class="pnl ${won?'pos':'neg'}">${pnl}</div>
+          <small>+${b.betPoints?.toFixed(4)||'0.0000'} $BET</small>
+        </div>
+      </div>`;
+  }).join('');
+}
+
+/* ===== COMPUTED ===== */
+function getWithdrawableBalance() {
+  // Only real profits above bonus can be withdrawn
+  return Math.max(0, STATE.balance - STATE.bonus);
+}
+
+function getPendingRequest() {
+  const reqs = loadRequests();
+  return reqs.find(r => r.status === 'pending') || null;
+}
+
+/* ===== UI UPDATE ===== */
+function updateWalletUI() {
+  const chip  = document.getElementById('wallet-chip');
+  const label = document.getElementById('wallet-label');
+  const balEl = document.getElementById('balance-display');
+  const wBtn  = document.getElementById('withdraw-header-btn');
+  const bpEl  = document.getElementById('bet-points-display');
+
+  if (STATE.wallet) {
+    chip.classList.remove('disconnected');
+    label.textContent = STATE.wallet.slice(0,4) + '...' + STATE.wallet.slice(-4);
+    balEl.textContent = '$' + STATE.balance.toFixed(2);
+    bpEl.textContent  = formatBET(STATE.betPoints);
+    const canWithdraw = getWithdrawableBalance() > 0;
+    wBtn.classList.toggle('visible', canWithdraw);
+  } else {
+    chip.classList.add('disconnected');
+    label.textContent = 'Connect Wallet';
+    balEl.textContent = '$0.00';
+    bpEl.textContent  = '0.00';
+    wBtn.classList.remove('visible');
+  }
+  updatePendingBanner();
+}
+
+function formatBET(n) {
+  if (n >= 1_000_000) return (n/1_000_000).toFixed(2) + 'M';
+  if (n >= 1_000)     return (n/1_000).toFixed(2) + 'K';
+  return n.toFixed(2);
+}
+
+function updatePendingBanner() {
+  const banner = document.getElementById('pending-banner');
+  const text = document.getElementById('pending-banner-text');
+  const pending = STATE.wallet ? getPendingRequest() : null;
+  if (pending) {
+    const cur = pending.currency.toUpperCase();
+    text.textContent = `Withdrawal request pending: $${pending.amount.toFixed(2)} in ${cur} → ${pending.address.slice(0,8)}...`;
+    banner.classList.add('show');
+  } else {
+    banner.classList.remove('show');
+  }
+}
+
+function updateBetButtons() {
+  // Buttons are always enabled once a coin is selected — wallet check happens on click
+  const dis = !STATE.selectedCoin || !!STATE.activeBet;
+  document.getElementById('btn-higher').disabled = dis;
+  document.getElementById('btn-lower').disabled = dis;
+}
+
+/* ===== COINGECKO ===== */
+async function fetchCoins(page = 1) {
+  try {
+    const r = await fetch(`${CG_BASE}/coins/markets?vs_currency=usd&order=market_cap_desc&per_page=100&page=${page}&sparkline=false`);
+    return await r.json();
+  } catch(e) { return []; }
+}
+
+async function loadAllCoins() {
+  document.getElementById('coin-list').innerHTML = '<div class="loading-coins">Loading markets...</div>';
+  const [p1, p2, p3] = await Promise.all([fetchCoins(1), fetchCoins(2), fetchCoins(3)]);
+  STATE.coins = [...p1, ...p2, ...p3].filter(Boolean);
+  STATE.filteredCoins = STATE.coins;
+  renderCoinList();
+  if (STATE.coins.length > 0) selectCoin(STATE.coins[0]);
+}
+
+function renderCoinList() {
+  const list = document.getElementById('coin-list');
+  if (!STATE.filteredCoins.length) { list.innerHTML = '<div class="loading-coins">No coins found.</div>'; return; }
+  list.innerHTML = STATE.filteredCoins.map((c, i) => `
+    <div class="coin-item${STATE.selectedCoin?.id === c.id ? ' active' : ''}" onclick="selectCoin(STATE.filteredCoins[${i}])">
+      <img class="coin-img" src="${c.image}" alt="${c.symbol}" onerror="this.src=''" />
+      <div class="coin-info">
+        <div class="coin-name">${c.name}</div>
+        <div class="coin-symbol">${c.symbol.toUpperCase()}</div>
+      </div>
+      <div class="coin-price-col">
+        <div class="coin-price">$${formatPrice(c.current_price)}</div>
+        <div class="coin-change ${(c.price_change_percentage_24h||0) >= 0 ? 'pos' : 'neg'}">
+          ${(c.price_change_percentage_24h||0) >= 0 ? '▲' : '▼'}${Math.abs(c.price_change_percentage_24h||0).toFixed(2)}%
+        </div>
+      </div>
+    </div>`).join('');
+}
+
+function filterCoins(q) {
+  const s = q.toLowerCase();
+  STATE.filteredCoins = STATE.coins.filter(c => c.name.toLowerCase().includes(s) || c.symbol.toLowerCase().includes(s));
+  renderCoinList();
+}
+
+function formatPrice(p) {
+  if (!p) return '0.00';
+  if (p >= 1000) return p.toLocaleString('en-US', {minimumFractionDigits:2, maximumFractionDigits:2});
+  if (p >= 1) return p.toFixed(4);
+  return p.toFixed(8);
+}
+
+/* ===== SELECT COIN ===== */
+function selectCoin(coin) {
+  STATE.selectedCoin = coin;
+  document.getElementById('coin-img').src = coin.image;
+  document.getElementById('coin-name-display').textContent = coin.name;
+  document.getElementById('coin-ticker').textContent = coin.symbol.toUpperCase() + ' / USD';
+  document.getElementById('price-big').textContent = '$' + formatPrice(coin.current_price);
+  const ch = coin.price_change_percentage_24h || 0;
+  const chEl = document.getElementById('price-change-big');
+  chEl.textContent = `${ch >= 0 ? '▲' : '▼'} ${Math.abs(ch).toFixed(2)}% (24h)`;
+  chEl.className = 'price-change-big ' + (ch >= 0 ? 'pos' : 'neg');
+  updateBetButtons();
+  loadTVChart(coin.symbol.toUpperCase());
+  renderCoinList();
+}
+
+/* ===== TRADINGVIEW ===== */
+function loadTVChart(symbol) {
+  document.getElementById('chart-placeholder').style.display = 'none';
+  document.getElementById('tv-widget').innerHTML = '';
+  const symMap = {BTC:'BINANCE:BTCUSDT',ETH:'BINANCE:ETHUSDT',SOL:'BINANCE:SOLUSDT',BNB:'BINANCE:BNBUSDT',XRP:'BINANCE:XRPUSDT',ADA:'BINANCE:ADAUSDT',DOGE:'BINANCE:DOGEUSDT',AVAX:'BINANCE:AVAXUSDT',LINK:'BINANCE:LINKUSDT',DOT:'BINANCE:DOTUSDT',MATIC:'BINANCE:MATICUSDT',LTC:'BINANCE:LTCUSDT',UNI:'BINANCE:UNIUSDT'};
+  if (typeof TradingView !== 'undefined') {
+    new TradingView.widget({
+      container_id: 'tv-widget', symbol: symMap[symbol] || `BINANCE:${symbol}USDT`,
+      interval: '5', timezone: 'Etc/UTC', theme: 'dark', style: '1', locale: 'en',
+      toolbar_bg: '#080b12', enable_publishing: false, hide_top_toolbar: false,
+      save_image: false, width: '100%', height: '100%',
+    });
+  }
+}
+
+/* ===== PHANTOM WALLET ===== */
+async function connectPhantom() {
+  const phantom = window.phantom?.solana;
+  if (!phantom) {
+    toast('Phantom not found. Please install the extension.', 4000);
+    window.open('https://phantom.app/', '_blank');
+    closeModal('wallet-modal');
+    return;
+  }
+  try {
+    const resp = await phantom.connect();
+    STATE.wallet = resp.publicKey.toString();
+    const existing = loadUser();
+    if (!existing) {
+      // Brand new user — grant bonus once
+      STATE.balance = BONUS_AMOUNT;
+      STATE.bonus = BONUS_AMOUNT;
+      STATE.betPoints = 0;
+      STATE.totalWagered = 0;
+      STATE.betsPlaced = 0;
+      saveUser();
+      toast('🎁 Welcome! $100 bonus credited!', 5000);
+    } else {
+      // Returning user — restore exact saved state, never re-grant bonus
+      STATE.balance      = existing.balance      ?? 0;
+      STATE.bonus        = existing.bonus        ?? BONUS_AMOUNT;
+      STATE.betPoints    = existing.betPoints    ?? 0;
+      STATE.totalWagered = existing.totalWagered ?? 0;
+      STATE.betsPlaced   = existing.betsPlaced   ?? 0;
+    }
+    updateWalletUI();
+    closeModal('wallet-modal');
+    updateBetButtons();
+  } catch(e) { toast('Connection rejected.', 3000); }
+}
+
+function handleWalletChipClick() {
+  if (!STATE.wallet) document.getElementById('wallet-modal').classList.add('show');
+  else openDepositModal();
+}
+
+/* ===== DEPOSIT ===== */
+let depositTab = 'usdc';
+function openDepositModal() {
+  document.getElementById('deposit-address').textContent = CUSTODY.usdc;
+  document.getElementById('deposit-modal').classList.add('show');
+}
+function switchDepositTab(t) {
+  depositTab = t;
+  document.querySelectorAll('.tab-btn').forEach((b,i) => b.classList.toggle('active', (i===0&&t==='usdc')||(i===1&&t==='sol')));
+  document.getElementById('deposit-address').textContent = CUSTODY[t];
+}
+function copyDepositAddress() {
+  navigator.clipboard.writeText(CUSTODY[depositTab]);
+  toast('Address copied!', 2000);
+}
+
+/* ===== WITHDRAWAL ===== */
+function openWithdrawModal() {
+  if (!STATE.wallet) { toast('Connect your wallet first.', 2000); return; }
+
+  const available = getWithdrawableBalance();
+  const pending = getPendingRequest();
+
+  if (pending) {
+    toast('You already have a pending withdrawal request.', 3000);
+    return;
+  }
+  if (available <= 0) {
+    toast('No withdrawable balance. Only real profits above the $100 bonus can be withdrawn.', 4000);
+    return;
+  }
+
+  // Fill modal info
+  document.getElementById('wd-total-balance').textContent = '$' + STATE.balance.toFixed(2);
+  document.getElementById('wd-bonus-locked').textContent = '-$' + STATE.bonus.toFixed(2);
+  document.getElementById('wd-available').textContent = '$' + available.toFixed(2);
+  document.getElementById('wd-amount').value = '';
+  document.getElementById('wd-amount').max = available;
+  document.getElementById('wd-address').value = '';
+  document.getElementById('withdraw-modal').classList.add('show');
+}
+
+function submitWithdrawal() {
+  const amount = parseFloat(document.getElementById('wd-amount').value);
+  const currency = document.getElementById('wd-currency').value;
+  const address = document.getElementById('wd-address').value.trim();
+  const available = getWithdrawableBalance();
+
+  if (!amount || amount <= 0) { toast('Enter a valid amount.', 2000); return; }
+  if (amount > available) { toast(`Max withdrawable: $${available.toFixed(2)}`, 2000); return; }
+  if (!address || address.length < 32) { toast('Enter a valid Solana address.', 2000); return; }
+
+  // Save request
+  const reqs = loadRequests();
+  const req = {
+    id: Date.now().toString(),
+    wallet: STATE.wallet,
+    amount,
+    currency,
+    address,
+    status: 'pending',
+    requestedAt: new Date().toISOString(),
+    reviewedAt: null,
+    note: '',
+  };
+  reqs.push(req);
+  saveRequests(reqs);
+
+  closeModal('withdraw-modal');
+  updateWalletUI();
+  toast('✅ Withdrawal request submitted. You will be notified once it\'s processed.', 5000);
+}
+
+function cancelWithdrawal() {
+  const reqs = loadRequests();
+  const idx = reqs.findIndex(r => r.status === 'pending');
+  if (idx !== -1) {
+    reqs[idx].status = 'cancelled';
+    reqs[idx].reviewedAt = new Date().toISOString();
+    saveRequests(reqs);
+    updatePendingBanner();
+    updateWalletUI();
+    toast('Withdrawal request cancelled.', 2500);
+  }
+}
+
+/* ===== BET ===== */
+function setAmount(v) { document.getElementById('bet-amount').value = v; }
+function setAmountMax() { document.getElementById('bet-amount').value = Math.floor(STATE.balance); }
+
+async function placeBet(direction) {
+  if (!STATE.wallet) { handleWalletChipClick(); return; }
+  if (!STATE.selectedCoin) { toast('Select a coin first.', 2000); return; }
+  if (STATE.activeBet) { toast('You already have an active bet.', 2000); return; }
+  const amount = parseFloat(document.getElementById('bet-amount').value);
+  if (!amount || amount <= 0) { toast('Enter a valid amount.', 2000); return; }
+  if (amount > STATE.balance) { toast('Insufficient balance.', 2000); return; }
+
+  STATE.activeBet = { direction, amount, coin: STATE.selectedCoin, priceAt: STATE.selectedCoin.current_price };
+  STATE.balance -= amount;
+
+  // Earn $BET points: 0.01 per $1 wagered, regardless of outcome
+  const earned = amount * BET_RATE;
+  STATE.betPoints    += earned;
+  STATE.totalWagered += amount;
+  STATE.betsPlaced   += 1;
+
+  saveUser();
+  updateWalletUI();
+  updateBetButtons();
+
+  const dir = direction === 'higher' ? '▲ HIGHER' : '▼ LOWER';
+  document.getElementById('active-bet-label').textContent = `${dir} · $${amount.toFixed(2)} on ${STATE.selectedCoin.symbol.toUpperCase()} · Entry: $${formatPrice(STATE.activeBet.priceAt)}`;
+  document.getElementById('active-bet-detail').textContent = `Resolves in 2 min. Win: +$${amount.toFixed(2)} | Lose: -$${amount.toFixed(2)} · +${earned.toFixed(4)} $BET earned`;
+  document.getElementById('active-bet').classList.add('show');
+  startTimer(2 * 60);
+  toast(`Bet placed! ${dir} · +${earned.toFixed(4)} $BET earned 🪙`, 3500);
+}
+
+function startTimer(seconds) {
+  const circle = document.getElementById('timer-circle');
+  const text = document.getElementById('timer-text');
+  const C = 125.6;
+  let remaining = seconds;
+  clearInterval(STATE.betTimer);
+  STATE.betTimer = setInterval(async () => {
+    remaining--;
+    circle.style.strokeDashoffset = C * (1 - remaining / seconds);
+    const m = Math.floor(remaining / 60);
+    const s = (remaining % 60).toString().padStart(2, '0');
+    text.textContent = `${m}:${s}`;
+    if (remaining <= 0) { clearInterval(STATE.betTimer); await resolveBet(); }
+  }, 1000);
+}
+
+async function resolveBet() {
+  if (!STATE.activeBet) return;
+  const bet = STATE.activeBet;
+  let currentPrice = bet.coin.current_price;
+  try {
+    const r = await fetch(`${CG_BASE}/simple/price?ids=${bet.coin.id}&vs_currencies=usd`);
+    const d = await r.json();
+    currentPrice = d[bet.coin.id]?.usd || currentPrice;
+  } catch(e) {}
+
+  const diff = currentPrice - bet.priceAt;
+  const won = (bet.direction === 'higher' && diff > 0) || (bet.direction === 'lower' && diff < 0);
+
+  if (won) { STATE.balance += bet.amount * 2; }
+
+  // Save to history
+  saveBetToHistory({
+    id:         Date.now().toString(),
+    coin:       bet.coin.symbol.toUpperCase(),
+    direction:  bet.direction,
+    amount:     bet.amount,
+    entryPrice: bet.priceAt,
+    exitPrice:  currentPrice,
+    result:     won ? 'won' : 'lost',
+    betPoints:  bet.amount * BET_RATE,
+    timestamp:  new Date().toISOString(),
+  });
+
+  saveUser();
+  updateWalletUI();
+  showResult(won, bet, currentPrice);
+
+  STATE.activeBet = null;
+  document.getElementById('active-bet').classList.remove('show');
+  updateBetButtons();
+}
+
+function showResult(won, bet, currentPrice) {
+  const pct = ((currentPrice - bet.priceAt) / bet.priceAt * 100).toFixed(3);
+  const icon = document.getElementById('result-icon');
+  const title = document.getElementById('result-title');
+  const detail = document.getElementById('result-detail');
+  if (won) {
+    icon.textContent = '🏆'; icon.className = 'result-icon result-win';
+    title.textContent = `You won $${bet.amount.toFixed(2)}!`; title.className = 'result-win';
+    detail.textContent = `${bet.coin.symbol.toUpperCase()} moved ${pct > 0?'+':''}${pct}% — your prediction was correct!`;
+  } else {
+    icon.textContent = '💸'; icon.className = 'result-icon result-lose';
+    title.textContent = 'Better luck next time'; title.className = 'result-lose';
+    detail.textContent = `${bet.coin.symbol.toUpperCase()} moved ${pct > 0?'+':''}${pct}% — $${bet.amount.toFixed(2)} lost.`;
+  }
+  document.getElementById('result-modal').classList.add('show');
+}
+
+/* ===== $BET POINTS MODAL ===== */
+function openPointsModal() {
+  const share = STATE.betPoints / BET_SUPPLY * 100;
+  const barPct = Math.min(share * 1_000_000, 100); // scale for visibility
+
+  document.getElementById('pm-total').textContent   = STATE.betPoints.toFixed(4) + ' $BET';
+  document.getElementById('pm-wagered').textContent = '$' + STATE.totalWagered.toFixed(2);
+  document.getElementById('pm-bets').textContent    = STATE.betsPlaced;
+  document.getElementById('pm-share').textContent   = share.toFixed(6) + '%';
+  document.getElementById('pm-bar').style.width     = Math.max(barPct, STATE.betPoints > 0 ? 2 : 0) + '%';
+  document.getElementById('points-modal').classList.add('show');
+}
+
+/* ===== UTILS ===== */
+function closeModal(id) { document.getElementById(id).classList.remove('show'); }
+function toast(msg, ms=3000) {
+  const el = document.getElementById('toast');
+  el.textContent = msg; el.classList.add('show');
+  setTimeout(() => el.classList.remove('show'), ms);
+}
+
+/* ===== INIT ===== */
+updateWalletUI();
+loadAllCoins();
+</script>
+</body>
+</html>

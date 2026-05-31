@@ -1,0 +1,148 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>CryptoBet — Admin Login</title>
+  <link href="https://fonts.googleapis.com/css2?family=Space+Mono:wght@400;700&family=DM+Sans:wght@400;500&display=swap" rel="stylesheet" />
+  <style>
+    :root {
+      --bg: #080b12; --bg2: #0e1420; --bg3: #161d2e;
+      --border: #1e2a3a; --border2: #2a3a50;
+      --text: #e8edf5; --text2: #8899aa; --text3: #4a5a6a;
+      --green: #00e676; --red: #ff3d57;
+      --mono: 'Space Mono', monospace; --sans: 'DM Sans', sans-serif;
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      background: var(--bg); color: var(--text); font-family: var(--sans);
+      min-height: 100vh; display: flex; align-items: center; justify-content: center;
+    }
+
+    .login-card {
+      background: var(--bg2); border: 1px solid var(--border2);
+      border-radius: 14px; padding: 40px; width: 360px;
+    }
+    .logo {
+      font-family: var(--mono); font-size: 15px; font-weight: 700;
+      color: var(--green); margin-bottom: 6px;
+    }
+    .logo span { color: var(--text2); font-weight: 400; }
+    .subtitle {
+      font-size: 13px; color: var(--text3); font-family: var(--mono);
+      margin-bottom: 32px;
+    }
+
+    .form-group { margin-bottom: 16px; }
+    label { display: block; font-size: 12px; color: var(--text2); font-family: var(--mono); margin-bottom: 6px; }
+    .password-wrap { position: relative; }
+    input[type="password"], input[type="text"] {
+      width: 100%; background: var(--bg3); border: 1px solid var(--border2);
+      border-radius: 7px; padding: 11px 40px 11px 14px;
+      font-family: var(--mono); font-size: 14px; color: var(--text);
+      outline: none; transition: border-color 0.15s;
+    }
+    input:focus { border-color: var(--green); }
+    .toggle-eye {
+      position: absolute; right: 12px; top: 50%; transform: translateY(-50%);
+      background: none; border: none; color: var(--text3); cursor: pointer;
+      font-size: 16px; padding: 0;
+    }
+    .toggle-eye:hover { color: var(--text2); }
+
+    .submit-btn {
+      width: 100%; padding: 12px; border-radius: 7px; border: none;
+      background: var(--green); color: #000; font-weight: 700;
+      font-family: var(--mono); font-size: 14px; cursor: pointer;
+      transition: background 0.15s; margin-top: 8px;
+    }
+    .submit-btn:hover { background: #00c853; }
+    .submit-btn:disabled { opacity: 0.5; cursor: not-allowed; }
+
+    .error-msg {
+      display: none; margin-top: 14px; padding: 10px 14px;
+      background: rgba(255,61,87,0.08); border: 1px solid rgba(255,61,87,0.25);
+      border-radius: 7px; font-size: 13px; color: var(--red);
+      font-family: var(--mono);
+    }
+    .error-msg.show { display: block; }
+
+    .attempts-left {
+      font-size: 11px; color: var(--text3); font-family: var(--mono);
+      text-align: center; margin-top: 12px;
+    }
+  </style>
+</head>
+<body>
+<div class="login-card">
+  <div class="logo">CRYPTO<span>BET</span></div>
+  <div class="subtitle">/ admin access</div>
+
+  <div class="form-group">
+    <label>Password</label>
+    <div class="password-wrap">
+      <input type="password" id="pwd" placeholder="Enter admin password" autocomplete="current-password" />
+      <button class="toggle-eye" type="button" onclick="togglePwd()" id="eye-btn">👁</button>
+    </div>
+  </div>
+
+  <button class="submit-btn" id="submit-btn" onclick="doLogin()">Access Dashboard</button>
+
+  <div class="error-msg" id="error-msg">Incorrect password. Try again.</div>
+  <div class="attempts-left" id="attempts-left"></div>
+</div>
+
+<script>
+  let attempts = 0;
+  const MAX = 5;
+
+  const pwdEl = document.getElementById('pwd');
+  pwdEl.addEventListener('keydown', e => { if (e.key === 'Enter') doLogin(); });
+
+  function togglePwd() {
+    const isHidden = pwdEl.type === 'password';
+    pwdEl.type = isHidden ? 'text' : 'password';
+    document.getElementById('eye-btn').textContent = isHidden ? '🙈' : '👁';
+  }
+
+  async function doLogin() {
+    if (attempts >= MAX) return;
+
+    const pwd = pwdEl.value;
+    if (!pwd) return;
+
+    const btn = document.getElementById('submit-btn');
+    btn.disabled = true;
+    btn.textContent = 'Checking…';
+
+    try {
+      const res = await fetch('/admin/login', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ password: pwd }),
+      });
+
+      if (res.ok) {
+        btn.textContent = '✓ Access granted';
+        window.location.href = '/admin';
+      } else {
+        attempts++;
+        pwdEl.value = '';
+        pwdEl.focus();
+        document.getElementById('error-msg').classList.add('show');
+        const left = MAX - attempts;
+        document.getElementById('attempts-left').textContent =
+          left > 0 ? `${left} attempt${left > 1 ? 's' : ''} remaining` : 'Too many attempts. Refresh to retry.';
+        btn.disabled = attempts >= MAX;
+        btn.textContent = attempts >= MAX ? 'Locked' : 'Access Dashboard';
+      }
+    } catch (e) {
+      document.getElementById('error-msg').textContent = 'Server error. Try again.';
+      document.getElementById('error-msg').classList.add('show');
+      btn.disabled = false;
+      btn.textContent = 'Access Dashboard';
+    }
+  }
+</script>
+</body>
+</html>
